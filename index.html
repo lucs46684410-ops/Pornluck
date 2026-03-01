@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+
+<title>pornluck</title>
+
+<style>
+body{
+margin:0;
+font-family:Arial;
+background:#0f0f0f;
+color:white;
+}
+
+header{
+background:#202020;
+padding:10px;
+display:flex;
+justify-content:space-between;
+}
+
+.grid{
+display:grid;
+grid-template-columns:repeat(auto-fill,minmax(220px,1fr));
+gap:10px;
+padding:10px;
+}
+
+.card{
+background:#1c1c1c;
+border-radius:10px;
+overflow:hidden;
+cursor:pointer;
+}
+
+video{
+width:100%;
+border-radius:8px;
+}
+
+.page{display:none;padding:10px;}
+
+input,button{
+padding:8px;
+margin:5px;
+border:none;
+border-radius:5px;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+<b>pornluck</b>
+<div id="userArea"></div>
+</header>
+
+<!-- LOGIN -->
+<div id="login" class="page" style="display:block">
+<h2>Login</h2>
+<input id="nome" placeholder="Seu nome">
+<button onclick="entrar()">Entrar</button>
+</div>
+
+<!-- HOME -->
+<div id="home" class="page">
+<input type="file" id="upload" accept="video/*">
+<input id="tituloVideo" placeholder="Título">
+
+<div class="grid" id="videos"></div>
+</div>
+
+<!-- PLAYER -->
+<div id="watch" class="page">
+
+<h2 id="titulo"></h2>
+<p id="canal"></p>
+
+<video id="player" controls></video>
+
+<p>
+👍 <span id="likes">0</span>
+<button onclick="like()">Curtir</button>
+</p>
+
+<p>
+🔔 <span id="subs">0</span>
+<button onclick="inscrever()">Inscrever</button>
+</p>
+
+<p>👁 <span id="views"></span> visualizações</p>
+
+<h3>Comentários</h3>
+<input id="comentario">
+<button onclick="comentar()">Enviar</button>
+
+<div id="listaComentarios"></div>
+
+<button onclick="voltar()">⬅ Voltar</button>
+
+</div>
+
+<script>
+
+let usuario=null;
+
+let banco=
+JSON.parse(localStorage.getItem("mytube"))||{
+users:[],
+videos:[]
+};
+
+let atual=null;
+
+function salvar(){
+localStorage.setItem("mytube",
+JSON.stringify(banco));
+}
+
+// LOGIN
+function entrar(){
+
+let nome=document.getElementById("nome").value;
+if(!nome)return;
+
+usuario=nome;
+
+userArea.innerHTML="👤 "+usuario;
+
+login.style.display="none";
+home.style.display="block";
+}
+
+// UPLOAD
+upload.onchange=e=>{
+
+let file=e.target.files[0];
+let titulo=tituloVideo.value;
+
+if(!file||!titulo)return;
+
+let url=URL.createObjectURL(file);
+
+banco.videos.push({
+titulo,
+canal:usuario,
+url,
+likes:0,
+subs:0,
+views:0,
+comentarios:[]
+});
+
+salvar();
+mostrarVideos();
+};
+
+function mostrarVideos(){
+
+videos.innerHTML="";
+
+banco.videos.forEach((v,i)=>{
+
+videos.innerHTML+=`
+<div class="card"
+onclick="abrir(${i})">
+<video src="${v.url}"></video>
+<p>${v.titulo}</p>
+<p>${v.canal}</p>
+</div>`;
+});
+}
+
+function abrir(i){
+
+atual=i;
+
+home.style.display="none";
+watch.style.display="block";
+
+let v=banco.videos[i];
+
+player.src=v.url;
+titulo.innerText=v.titulo;
+canal.innerText="Canal: "+v.canal;
+
+v.views++;
+views.innerText=v.views;
+
+likes.innerText=v.likes;
+subs.innerText=v.subs;
+
+mostrarComentarios();
+salvar();
+}
+
+function voltar(){
+watch.style.display="none";
+home.style.display="block";
+}
+
+function like(){
+banco.videos[atual].likes++;
+likes.innerText=banco.videos[atual].likes;
+salvar();
+}
+
+function inscrever(){
+banco.videos[atual].subs++;
+subs.innerText=banco.videos[atual].subs;
+salvar();
+}
+
+function comentar(){
+
+let txt=comentario.value;
+if(!txt)return;
+
+banco.videos[atual]
+.comentarios.push(usuario+": "+txt);
+
+comentario.value="";
+mostrarComentarios();
+salvar();
+}
+
+function mostrarComentarios(){
+
+listaComentarios.innerHTML="";
+
+banco.videos[atual]
+.comentarios
+.forEach(c=>{
+listaComentarios.innerHTML+=
+`<p>${c}</p>`;
+});
+}
+
+mostrarVideos();
+
+</script>
+
+</body>
+</html>
